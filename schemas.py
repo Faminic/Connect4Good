@@ -18,3 +18,6 @@ class UserCreate(BaseModel): #what data format I expect when user creates an acc
 class UserLogin(BaseModel): #what data format I expect when user logs in
     email: str
     password: str
+    
+#key is field name, value is list of possible values
+profile_choices = {'gender': ['m', 'f'], 'work_status': ['student', 'employed', 'unemployed'], 'immigration_status': ['citizen', 'pr', 'student visa' , 'other']}

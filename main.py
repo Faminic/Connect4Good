@@ -28,15 +28,21 @@ def register_user(request: schemas.UserCreate, db: Session = Depends(get_session
 
     unique_id = str(uuid.uuid4())
     password = get_password_hash(request.password)
+    
+    if request.age <= 0:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='Please enter a valid value for Age')
+    if request.gender.lower() not in schemas.profile_choices['gender']:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='Please enter a valid value for Gender: M or F')
+    if request.work_status.lower() not in schemas.profile_choices['work_status']:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='Please enter a valid value for Work Status: Student, Employed, or Unemployed')
+    if request.immigration_status.lower() not in schemas.profile_choices['immigration_status']:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='Please enter a valid value for Immigration Status: Citizen, PR, Student Visa, or Other')
         
-    new_user = models.User(id=unique_id, email=request.email, full_name=request.full_name, password=password)
-    user_profile = models.Profile(id=unique_id, age=request.age, gender=request.gender, phone_number=request.phone_number, work_status=request.work_status, immigration_status=request.immigration_status, skills=request.skills, interests=request.interests, past_volunteer_experience=request.past_volunteer_experience)
+    new_user = models.User(id=unique_id, email=request.email, full_name=request.full_name, password=password, age=request.age, gender=request.gender, phone_number=request.phone_number, work_status=request.work_status, immigration_status=request.immigration_status, skills=request.skills, interests=request.interests, past_volunteer_experience=request.past_volunteer_experience)
     
     db.add(new_user)
-    db.add(user_profile)
     db.commit()
     db.refresh(new_user)
-    db.refresh(user_profile)
     
     return {'message': 'User and Profile registered successfully'}
 
@@ -63,6 +69,8 @@ def login_user(request: schemas.UserLogin, db: Session = Depends(get_session)):
 def reset_database():
     reset_db()
     return {'message': 'Database reset successfully'}
+
+
 
 
 

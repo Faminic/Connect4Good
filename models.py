@@ -8,11 +8,6 @@ class User(Base): #table to store users - all fields required
     full_name = Column(String, nullable=False) 
     password = Column(String, nullable=False)
     is_admin = Column(Boolean, default=False) #is_admin represents if the user is an admin -> default is False
-    
-
-class Profile(Base): #table to store profiles of users - all fields are required
-    __tablename__ = 'profiles'
-    id = Column(String, primary_key=True, index=True)
     age = Column(Integer, nullable=False)
     gender = Column(String, nullable=False)
     phone_number = Column(String, nullable=False) 

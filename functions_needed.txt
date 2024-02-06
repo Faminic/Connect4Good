@@ -1,28 +1,23 @@
 [] create_user: Creates a new user in the database with provided details such as email, password, and name. User is also asked to do the initial profile setup - age, gender, phone number, work status, immigration status, skills, interests and past volunteer experience.
- - Need to add limited choices for certain profile fields
 
 [DONE] login_user: Logs in a user by verifying their email and password combination.
 
 
 
+[] get_user: Retrieves the user and profile info of a specific user based on their user ID.
 
-[] get_profile: Retrieves the profile of a specific user based on their user ID.
-
-[] update_profile: Modifies details of an existing user's profile such as phone number, country, city, description, or interests.
+[] update_user: Can modify any user or profile info of a specific user based on their user ID.
 
 [] delete_user: Deletes the user
 
 
 
 
-[] change_login: Allows a user to change their password/email/name after successful authentication.
+[ONLY ALLOW/SHOW THE FOLLOWING FUNCTIONALITIES TO ADMIN USERS]
 
 [] promote_to_admin: Allows admin to Grant admin privileges to a user, allowing them to perform administrative tasks within the application.
 
 [] demote_from_admin: Allows admin to remove admin privileges from a user, restricting their access to administrative tasks.
-
-
-
 
 [] delete_event_by_admin: Allows the admin to delete a specific event from the database, removing all associated information such as event details, tasks, and registered users.
 
@@ -44,9 +39,6 @@
 [] register_for_event: Registers a user for a specific event by adding their ID to the list of users registered for that event.
 
 [] unregister_from_event: Removes a user's registration from a specific event by removing their ID from the list of users registered for that event.
-
-
-
 
 [] list_events: Retrieves a list of all available events
 
