@@ -23,7 +23,7 @@ class ChangeAdmin(BaseModel): #what data format I expect when user changes anoth
     curr_user_email: str
     new_user_email: str
 
-class ChangeEvenet(BaseModel): #what data format I expect when we create or change an event
+class ChangeEvent(BaseModel): #what data format I expect when we create or change an event
     email: str
     title: str
     date: str
@@ -35,8 +35,13 @@ class ChangeEvenet(BaseModel): #what data format I expect when we create or chan
     description: str
     tasks: str
     
-class DeleteEvent(BaseModel): #what data format I expect when we delete an event
+class AdminEvent(BaseModel): #what data format I expect when we delete an event
     email: str
+    title: str
+
+class KickUser(BaseModel): #what data format I expect when we kick a user from an event
+    curr_user_email: str
+    new_user_email: str
     title: str
     
 #key is field name, value is list of possible values

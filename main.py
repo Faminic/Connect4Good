@@ -81,6 +81,13 @@ def get_user(email: str, db: Session = Depends(get_session)):
     if not user:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='User not found')
     
+    events_registered = []
+    for event_id in user.events_registered:
+        event = db.query(models.Event).filter(models.Event.id == event_id).first()
+        if not event:
+            continue
+        events_registered.append(event.title)
+    
     return {'email': user.email,
             'full_name': user.full_name,
             'age': user.age,
@@ -91,7 +98,7 @@ def get_user(email: str, db: Session = Depends(get_session)):
             'skills': user.skills,
             'interests': user.interests,
             'past_volunteer_experience': user.past_volunteer_experience,
-            'events_registered': user.events_registered #note this is a list of event ids, can be empty
+            'events_registered': events_registered #note this is a list of event titles, can be empty
             }
 
 
@@ -200,7 +207,7 @@ def demote_admin(request: schemas.ChangeAdmin, db: Session = Depends(get_session
 #expecting a JSON in the schema of ChangeEvent
 #returning a JSON with a success message in the form {'message': message} or a corresponding error message
 @app.post('/event/create_event')
-def create_event(request: schemas.ChangeEvenet, db: Session = Depends(get_session)):
+def create_event(request: schemas.ChangeEvent, db: Session = Depends(get_session)):
     user = db.query(models.User).filter(models.User.email == request.email).first()
     if not user:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='User not found')
@@ -228,7 +235,7 @@ def create_event(request: schemas.ChangeEvenet, db: Session = Depends(get_sessio
 #expecting a JSON in the schema of ChangeEvent
 #returning a JSON with a success message in the form {'message': message} or a corresponding error message
 @app.post('/event/update_event')
-def update_event(request: schemas.ChangeEvenet, db: Session = Depends(get_session)):
+def update_event(request: schemas.ChangeEvent, db: Session = Depends(get_session)):
     user = db.query(models.User).filter(models.User.email == request.email).first()
     if not user:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='User not found')
@@ -256,10 +263,10 @@ def update_event(request: schemas.ChangeEvenet, db: Session = Depends(get_sessio
 
 
 #call this endpoint to let an admin user delete a volunteer event
-#expecting a JSON in the schema of DeleteEvent
+#expecting a JSON in the schema of AdminEvent
 #returning a JSON with a success message in the form {'message': message} or a corresponding error message
 @app.post('/event/delete_event')
-def delete_event(request: schemas.DeleteEvent, db: Session = Depends(get_session)):
+def delete_event(request: schemas.AdminEvent, db: Session = Depends(get_session)):
     user = db.query(models.User).filter(models.User.email == request.email).first()
     if not user:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='User not found')
@@ -342,3 +349,120 @@ def unregister_event(email: str, title: str, db: Session = Depends(get_session))
     user.events_registered = [x for x in user.events_registered if x != event.id]
     db.commit()
     return {'message': 'User unregistered from event successfully'}
+
+
+#call this endpoint to get a list of all users registered for a volunteer event
+#expecting a JSON in the schema of AdminEvent
+#returning a JSON with a list of all user emails registered for the event
+@app.post('/event/get_users_registered')
+def get_event_registers(request: schemas.AdminEvent, db: Session = Depends(get_session)):
+    user = db.query(models.User).filter(models.User.email == request.email).first()
+    if not user:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='User not found')
+    if not user.is_admin:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='User is not an admin')
+    
+    event = db.query(models.Event).filter(models.Event.title == request.title).first()
+    if not event:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='Event not found')
+    
+    users_registered = []
+    for user_id in event.users_registered:
+        user = db.query(models.User).filter(models.User.id == user_id).first()
+        users_registered.append(user.email)
+        
+    return {'users_registered': users_registered}
+
+
+#call this endpoint when an admin user wants to view a user's info + profile
+#expecting a JSON in the schema of ChangeAdmin
+#returning a JSON with all the information about the user - see format below (note is_admin and events_registered are included here)
+@app.post('/admin/get_user')
+def admin_get_user(request: schemas.ChangeAdmin, db: Session = Depends(get_session)):
+    curr_user = db.query(models.User).filter(models.User.email == request.curr_user_email).first()
+    if not curr_user:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='Admin User not found')
+    if not curr_user.is_admin:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='Current User is not an admin')
+    
+    new_user = db.query(models.User).filter(models.User.email == request.new_user_email).first()
+    if not new_user:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='New User not found')
+    
+    events_registered = []
+    for event_id in new_user.events_registered:
+        event = db.query(models.Event).filter(models.Event.id == event_id).first()
+        events_registered.append(event.title)
+    
+    return {'email': new_user.email,
+            'full_name': new_user.full_name,
+            'is_admin': new_user.is_admin,
+            'age': new_user.age,
+            'gender': new_user.gender,
+            'phone_number': new_user.phone_number,
+            'work_status': new_user.work_status,
+            'immigration_status': new_user.immigration_status,
+            'skills': new_user.skills,
+            'interests': new_user.interests,
+            'past_volunteer_experience': new_user.past_volunteer_experience,
+            'events_registered': events_registered #note this is a list of event titles, can be empty
+            }
+
+
+#call this endpoint when an admin user wants to kick a user out of an event
+#expecting a JSON in the schema of KickUser
+#returning a JSON with a success message in the form {'message': message} or a corresponding error message
+@app.post('/admin/kick_user')
+def admin_kick_user(request: schemas.KickUser, db: Session = Depends(get_session)):
+    curr_user = db.query(models.User).filter(models.User.email == request.curr_user_email).first()
+    if not curr_user:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='Admin User not found')
+    if not curr_user.is_admin:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='Current User is not an admin')
+    
+    new_user = db.query(models.User).filter(models.User.email == request.new_user_email).first()
+    if not new_user:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='New User not found')
+    
+    event = db.query(models.Event).filter(models.Event.title == request.title).first()
+    if not event:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='Event not found')
+    
+    if new_user.id not in event.users_registered:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='New User not registered for event')
+    
+    event.users_registered = [x for x in event.users_registered if x != new_user.id]
+    new_user.events_registered = [x for x in new_user.events_registered if x != event.id]
+    db.commit()
+    
+    return {'message': 'User kicked from event successfully'}
+
+
+#call this endpoint to get a list of all events
+#not expecting any input
+#returning a JSON with a list of all event titles
+@app.get('/event/get_events')
+def get_events(db: Session = Depends(get_session)):
+    events = db.query(models.Event).all()
+    event_titles = [event.title for event in events]
+    return {'event_titles': event_titles}
+    
+
+#call this endpoint to get the list of events a user is registered for
+#expecting the email of the user as a string
+#returning a JSON with a list of all event titles the user is registered for
+@app.get('/user/get_user_events')
+def get_user_events(email: str, db: Session = Depends(get_session)):
+    user = db.query(models.User).filter(models.User.email == email).first()
+    if not user:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='User not found')
+    
+    events_registered = []
+    for event_id in user.events_registered:
+        event = db.query(models.Event).filter(models.Event.id == event_id).first()
+        if not event:
+            continue
+        events_registered.append(event.title)
+    
+    return {'events_registered': events_registered}
+
