@@ -18,6 +18,26 @@ class UserCreate(BaseModel): #what data format I expect when user creates an acc
 class UserLogin(BaseModel): #what data format I expect when user logs in
     email: str
     password: str
+
+class ChangeAdmin(BaseModel): #what data format I expect when user changes another user's admin status
+    curr_user_email: str
+    new_user_email: str
+
+class ChangeEvenet(BaseModel): #what data format I expect when we create or change an event
+    email: str
+    title: str
+    date: str
+    time: str
+    requirements: str
+    capacity: int
+    deadline: str
+    location: str
+    description: str
+    tasks: str
+    
+class DeleteEvent(BaseModel): #what data format I expect when we delete an event
+    email: str
+    title: str
     
 #key is field name, value is list of possible values
 profile_choices = {'gender': ['m', 'f'], 'work_status': ['student', 'employed', 'unemployed'], 'immigration_status': ['citizen', 'pr', 'student visa' , 'other']}

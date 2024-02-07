@@ -157,5 +157,188 @@ def is_admin(email: str, db: Session = Depends(get_session)):
     return {'is_admin': user.is_admin}
 
 
-
+#call this endpoint to promote another user to admin - current user must be an admin and the new user must exist
+#expecting a JSON in the schema of ChangeAdmin
+#returning a JSON with a success message in the form {'message': message} or an error message if either user not found or current user is not an admin
+@app.post('/user/promote_admin')
+def promote_admin(request: schemas.ChangeAdmin, db: Session = Depends(get_session)):
+    curr_user = db.query(models.User).filter(models.User.email == request.curr_user_email).first()
+    new_user = db.query(models.User).filter(models.User.email == request.new_user_email).first()
     
+    if not curr_user:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='Admin User not found')
+    if not new_user:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='New User not found')
+    if not curr_user.is_admin:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='Current User is not an admin')
+    
+    new_user.is_admin = True
+    db.commit()
+    return {'message': 'User promoted to admin successfully'}
+
+#call this endpoint to demote another user from admin - current user must be an admin and the new user must exist
+#expecting a JSON in the schema of ChangeAdmin
+#returning a JSON with a success message in the form {'message': message} or an error message if either user not found or current user is not an admin
+@app.post('/user/demote_admin')
+def demote_admin(request: schemas.ChangeAdmin, db: Session = Depends(get_session)):
+    curr_user = db.query(models.User).filter(models.User.email == request.curr_user_email).first()
+    new_user = db.query(models.User).filter(models.User.email == request.new_user_email).first()
+    
+    if not curr_user:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='Admin User not found')
+    if not new_user:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='New User not found')
+    if not curr_user.is_admin:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='Current User is not an admin')
+    
+    new_user.is_admin = False
+    db.commit()
+    return {'message': 'User demoted from admin successfully'}
+    
+
+#call this endpoint to let an admin user create a volunteer event - no two events can have the same title
+#expecting a JSON in the schema of ChangeEvent
+#returning a JSON with a success message in the form {'message': message} or a corresponding error message
+@app.post('/event/create_event')
+def create_event(request: schemas.ChangeEvenet, db: Session = Depends(get_session)):
+    user = db.query(models.User).filter(models.User.email == request.email).first()
+    if not user:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='User not found')
+    if not user.is_admin:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='User is not an admin')
+    
+    check_event = db.query(models.Event).filter(models.Event.title == request.title).first()
+    if check_event:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='Event already exists')
+    if request.capacity <= 0:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='Please enter a valid value for Capacity')
+    
+    unique_id = str(uuid.uuid4())
+    new_event = models.Event(id=unique_id, title=request.title, date=request.date, time=request.time, requirements=request.requirements, capacity=request.capacity, deadline=request.deadline, location=request.location, description=request.description, tasks=request.tasks)
+
+    db.add(new_event)
+    db.commit()
+    db.refresh(new_event)
+    
+    return {'message': 'Event created successfully'}
+
+
+#call this endpoint to let an admin user update a volunteer event
+#just like with updating a user, you will already pre-fill all existing values on the frontend, then user makes changes, then you send me the entire event with all fields and I will update the event in the DB
+#expecting a JSON in the schema of ChangeEvent
+#returning a JSON with a success message in the form {'message': message} or a corresponding error message
+@app.post('/event/update_event')
+def update_event(request: schemas.ChangeEvenet, db: Session = Depends(get_session)):
+    user = db.query(models.User).filter(models.User.email == request.email).first()
+    if not user:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='User not found')
+    if not user.is_admin:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='User is not an admin')
+    
+    event = db.query(models.Event).filter(models.Event.title == request.title).first()
+    if not event:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='Event not found')
+    if request.capacity <= 0:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='Please enter a valid value for Capacity')
+    
+    event.title = request.title
+    event.date = request.date
+    event.time = request.time
+    event.requirements = request.requirements
+    event.capacity = request.capacity
+    event.deadline = request.deadline
+    event.location = request.location
+    event.description = request.description
+    event.tasks = request.tasks
+    
+    db.commit()
+    return {'message': 'Event updated successfully'}
+
+
+#call this endpoint to let an admin user delete a volunteer event
+#expecting a JSON in the schema of DeleteEvent
+#returning a JSON with a success message in the form {'message': message} or a corresponding error message
+@app.post('/event/delete_event')
+def delete_event(request: schemas.DeleteEvent, db: Session = Depends(get_session)):
+    user = db.query(models.User).filter(models.User.email == request.email).first()
+    if not user:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='User not found')
+    if not user.is_admin:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='User is not an admin')
+    
+    event = db.query(models.Event).filter(models.Event.title == request.title).first()
+    if not event:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='Event not found')
+    
+    db.delete(event)
+    db.commit()
+    return {'message': 'Event deleted successfully'}
+
+
+#call this endpoint to get all information about a volunteer event
+#expecting the title of the event as a string
+#returning a JSON with all the information about the event - see format below
+@app.get('/event/get_event')
+def get_event(title: str, db: Session = Depends(get_session)):
+    event = db.query(models.Event).filter(models.Event.title == title).first()
+    if not event:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='Event not found')
+    
+    return {'title': event.title,
+            'date': event.date,
+            'time': event.time,
+            'requirements': event.requirements,
+            'capacity': event.capacity,
+            'deadline': event.deadline,
+            'location': event.location,
+            'description': event.description,
+            'tasks': event.tasks
+            }
+    
+
+#call this endpoint to let user register for a volunteer event
+#expecting the email of the user and the title of the event as strings
+#returning a JSON with a success message in the form {'message': message} or a corresponding error message
+@app.post('/event/register_event')
+def register_event(email: str, title: str, db: Session = Depends(get_session)):
+    user = db.query(models.User).filter(models.User.email == email).first()
+    if not user:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='User not found')
+    
+    event = db.query(models.Event).filter(models.Event.title == title).first()
+    if not event:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='Event not found')
+    if len(event.users_registered) >= event.capacity:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='Event is full already')
+    
+    #check if user is already registered for the event
+    if user.id in event.users_registered:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='User already registered for event')
+    
+    event.users_registered = event.users_registered + [user.id]
+    user.events_registered = user.events_registered + [event.id]
+    db.commit()
+    return {'message': 'User registered for event successfully'}
+
+
+#call this endpoint to let user unregister from a volunteer event
+#expecting the email of the user and the title of the event as strings
+#returning a JSON with a success message in the form {'message': message} or a corresponding error message
+@app.post('/event/unregister_event')
+def unregister_event(email: str, title: str, db: Session = Depends(get_session)):
+    user = db.query(models.User).filter(models.User.email == email).first()
+    if not user:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='User not found')
+    
+    event = db.query(models.Event).filter(models.Event.title == title).first()
+    if not event:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='Event not found')
+    
+    #check if user is registered for the event
+    if user.id not in event.users_registered:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='User not registered for event')
+    
+    event.users_registered = [x for x in event.users_registered if x != user.id]
+    user.events_registered = [x for x in user.events_registered if x != event.id]
+    db.commit()
+    return {'message': 'User unregistered from event successfully'}

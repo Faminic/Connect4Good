@@ -17,15 +17,15 @@
 
 [ONLY ALLOW/SHOW THE FOLLOWING FUNCTIONALITIES TO ADMIN USERS]
 
-[] promote_to_admin: Allows admin to Grant admin privileges to a user, allowing them to perform administrative tasks within the application.
+[DONE] promote_to_admin: Allows admin to Grant admin privileges to a user, allowing them to perform administrative tasks within the application.
 
-[] demote_from_admin: Allows admin to remove admin privileges from a user, restricting their access to administrative tasks.
+[DONE] demote_from_admin: Allows admin to remove admin privileges from a user, restricting their access to administrative tasks.
 
-[] delete_event_by_admin: Allows the admin to delete a specific event from the database, removing all associated information such as event details, tasks, and registered users.
+[DONE] create_event_by_admin: Enables the admin to create a new volunteer event, providing details such as title, dates, location, description, and tasks to populate the event in the database.
 
-[] create_event_by_admin: Enables the admin to create a new volunteer event, providing details such as title, dates, location, description, and tasks to populate the event in the database.
+[DONE] update_event_by_admin: Modifies details of an existing event such as title, dates, location, description, or tasks.
 
-[] update_event_by_admin: Modifies details of an existing event such as title, dates, location, description, or tasks.
+[DONE] delete_event_by_admin: Allows the admin to delete a specific event from the database, removing all associated information such as event details, tasks, and registered users.
 
 [] view_event_attendees: Retrieves a list of all students (users) registered for a specific event, providing the admin with details such as their names, contact information, and any other relevant profile details.
 
@@ -36,11 +36,11 @@
 
 
 
-[] get_event: Retrieves information about a specific event based on its ID.
+[DONE] get_event: Retrieves information about a specific event based on its title.
 
-[] register_for_event: Registers a user for a specific event by adding their ID to the list of users registered for that event.
+[DONE] register_for_event: Registers a user for a specific event by adding their ID to the list of users registered for that event.
 
-[] unregister_from_event: Removes a user's registration from a specific event by removing their ID from the list of users registered for that event.
+[DONE] unregister_from_event: Removes a user's registration from a specific event by removing their ID from the list of users registered for that event.
 
 [] list_events: Retrieves a list of all available events
 
