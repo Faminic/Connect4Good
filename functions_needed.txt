@@ -1,14 +1,16 @@
-[] create_user: Creates a new user in the database with provided details such as email, password, and name. User is also asked to do the initial profile setup - age, gender, phone number, work status, immigration status, skills, interests and past volunteer experience.
+[DONE] create_user: Creates a new user in the database with provided details such as email, password, and name. User is also asked to do the initial profile setup - age, gender, phone number, work status, immigration status, skills, interests and past volunteer experience.
 
 [DONE] login_user: Logs in a user by verifying their email and password combination.
 
 
 
-[] get_user: Retrieves the user and profile info of a specific user based on their user ID.
+[DONE] get_user: Retrieves the user and profile info of a specific user based on their user ID.
 
-[] update_user: Can modify any user or profile info of a specific user based on their user ID.
+[DONE] update_user: Can modify any user or profile info of a specific user based on their user ID.
 
-[] delete_user: Deletes the user
+[DONE] delete_user: Deletes the user
+
+[DONE] check_admin: Checks if user is admin
 
 
 
