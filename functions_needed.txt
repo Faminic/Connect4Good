@@ -50,6 +50,6 @@
 
 
 
-[] get_top_k_events: Retrieves the top k events with the highest cosine similarity scores compared to the user's profile.
+[DONE] /user/get_similar_events: Retrieves the top k events with the highest similarity to the user's profile
 
-[] get_personalized_tasks: Retrieves a list of tasks personalized to user's profile and tailored to specific event
+[DONE] /user/generate_tasks: Generates a set of tasks personalized to user's profile and tailored to specific event
