@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 import schemas, models #schemas represents format expecting from frontend, models represents database format
 from database import Base, engine, SessionLocal
 from utils import get_password_hash, verify_password, reset_db
+from openai_llm import generate_tasks, get_embeddings, get_cosine_similarity
 import uuid
 
 Base.metadata.create_all(bind=engine) #creates the tables in the database if they don't exist
@@ -465,4 +466,46 @@ def get_user_events(email: str, db: Session = Depends(get_session)):
         events_registered.append(event.title)
     
     return {'events_registered': events_registered}
+
+
+#call this endpoint to generate personalized tasks for a user based on an event
+#expecting a JSON in the schema of GenerateTasks
+#returning a JSON containing a single string that is the model's response
+@app.post('/user/generate_tasks')
+def generate_tasks_llm(request: schemas.GenerateTasks, db: Session = Depends(get_session)):
+    event = db.query(models.Event).filter(models.Event.title == request.event_title).first()
+    if not event:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='Event not found')
+    
+    user = db.query(models.User).filter(models.User.email == request.user_email).first()
+    if not user:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='User not found')
+    
+    event_description = 'Event Description: \n' + event.description + '\n\n' + 'Event Tasks: \n' + event.tasks
+    user_description = 'User Skills: \n' + user.skills + '\n\n' + 'User Interests: \n' + user.interests + '\n\n' + 'User Past Volunteer Experience: \n' + user.past_volunteer_experience
+    
+    return {'response': generate_tasks(event_description, user_description)}
+
+
+#call this endpoint to get the top 5 most similar events to a given user's profile
+#expecting the email of the user as a string
+#returning a JSON with a list of the top 5 most similar event titles - will return less than 5 if there are less than 5 events in the database
+@app.get('/user/get_similar_events')
+def match_events(email: str, db: Session = Depends(get_session)):
+    user = db.query(models.User).filter(models.User.email == email).first()
+    if not user:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='User not found')
+    
+    events = db.query(models.Event).all()
+    event_descriptions = [event.description for event in events]
+    user_description = user.skills + ' ' + user.interests + ' ' + user.past_volunteer_experience
+    
+    event_embeddings = [get_embeddings(event) for event in event_descriptions]
+    user_embedding = get_embeddings(user_description)
+    
+    similarities = [get_cosine_similarity(user_embedding, event_embedding) for event_embedding in event_embeddings]
+    top_5_indices = sorted(range(len(similarities)), key=lambda i: similarities[i], reverse=True)[:5]
+    top_5_events = [events[i].title for i in top_5_indices]
+    
+    return {'top_5_events': top_5_events}
 
