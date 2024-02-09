@@ -509,3 +509,19 @@ def match_events(email: str, db: Session = Depends(get_session)):
     
     return {'top_5_events': top_5_events}
 
+
+#call this endpoint to check if a user is registered for an event
+#expecting a JSON in the schema of GenerateTasks
+#returning a JSON with a boolean value in the form {'is_registered': is_registered}
+@app.post('/user/is_registered')
+def is_registered(request: schemas.GenerateTasks, db: Session = Depends(get_session)):
+    user = db.query(models.User).filter(models.User.email == request.user_email).first()
+    if not user:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='User not found')
+    
+    event = db.query(models.Event).filter(models.Event.title == request.event_title).first()
+    if not event:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='Event not found')
+    
+    return {'is_registered': user.id in event.users_registered}
+
