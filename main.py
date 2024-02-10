@@ -91,6 +91,7 @@ def get_user(email: str, db: Session = Depends(get_session)):
     
     return {'email': user.email,
             'full_name': user.full_name,
+            'is_admin': user.is_admin, #note this is a boolean value, 'true' or 'false
             'age': user.age,
             'gender': user.gender,
             'phone_number': user.phone_number,
